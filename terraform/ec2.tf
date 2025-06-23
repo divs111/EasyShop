@@ -74,7 +74,7 @@ resource "aws_instance" "testinstance" {
   instance_type   = var.instance_type 
   key_name        = aws_key_pair.deployer.key_name
   security_groups = [aws_security_group.allow_user_to_connect.name]
-  user_data = file("${path.module}/install_tools.sh")
+  # user_data = file("${path.module}/install_tools.sh")
   tags = {
     Name = "Jenkins-Automate"
   }
@@ -83,4 +83,28 @@ resource "aws_instance" "testinstance" {
     volume_type = "gp3"
   }
   
+}
+
+resource "local_file" "ansible_inventory" {
+  content = <<EOT
+  [jenkins]
+  ${aws_instance.testinstance.public_ip}
+  [jenkins:vars]
+  ansible_user=ubuntu
+  ansible_ssh_private_key_file=terra-key
+  EOT
+  filename = "${path.module}/inventory.ini"
+  
+}
+
+resource "null_resource" "provision_ansible" {
+  depends_on = [aws_instance.testinstance, local_file.ansible_inventory]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "waiting for ec2 to get launched"
+      sleep 60
+      ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini setup_tools.yml
+    EOT
+  }
 }
