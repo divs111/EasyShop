@@ -13,7 +13,7 @@ spec:
     - easyshop.mp.com
     secretName: easyshop-tls-secret  # Cert-Manager will manage this
   rules:
-  - host: easyshop.mp.com
+  - host: shopwithdiv.com
     http:
       paths:
       - path: /
